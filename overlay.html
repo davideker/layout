@@ -1,0 +1,205 @@
+<html>
+    <!--
+    /**************************
+    * Canvas Document Overlay.
+    * David Eker, 2020
+    **************************/
+    -->
+
+<head>
+     <!-- Required meta tags -->
+     <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <style>
+        body {
+            text-align: center;
+            background: #f2f6f8;
+            display: block;
+            margin: 8px;
+        }
+
+        img {
+            width: auto;
+            height: auto;
+            object-fit: none;
+            position: relative;
+            z-index: -1;
+        }
+
+        canvas {
+            top: 0px;
+            left: 0px;
+            position: absolute;
+            z-index: 20;
+        }
+
+        #container {
+            display: inline-block;
+            margin: 0 auto;
+            background: black;
+            position: relative;
+            border-radius: 10px; 
+            box-shadow: 0 5px 50px #333;
+            top: 0px;
+            left: 0px;
+            z-index: 0;
+        }
+
+        map {
+            position: fixed;
+        }
+
+        area {
+            border: 3px solid black;
+            z-index: 1;
+            position: fixed;
+        }
+    </style>
+    <script>
+        var rectangles = [];
+
+        function overlayCanvas(img) {
+            var container = document.querySelector("#container");
+            console.log(container);
+            container.style.width = img.width;
+            container.style.height = img.height;
+
+            var canvas = document.querySelector("canvas");
+            console.log(canvas);
+            canvas.style.width = img.width;
+            canvas.style.height = img.height;
+            //https://lavrton.com/hit-region-detection-for-html5-canvas-and-how-to-listen-to-click-events-on-canvas-shapes-815034d7e9f8/
+            canvas.addEventListener('click', (e) => {
+                const pos = {
+                    x: e.offsetX,
+                    y: e.offsetY
+                };
+                var i = 0;
+                while(i < rectangles.length && !isIntersect(pos, rectangles[i]))
+                {
+                    i++;
+                }
+            });
+        }
+
+              
+        function isIntersect(pos, rect)
+        {
+            var result = pos.x - rect[0] > 0 && pos.y - rect[1] > 0 && pos.x - rect[2] < 0 && pos.y - rect[3] < 0; 
+            if(result)
+            {
+                console.log(rect[4]);
+            }
+            return result;
+        }
+
+        //https://medium.com/wdstack/fixing-html5-2d-canvas-blur-8ebe27db07da
+        let dpi = window.devicePixelRatio;
+        function fix_dpi() {
+            let canvas = document.getElementById('canvas');
+            //get context
+            let ctx = canvas.getContext('2d');
+            //get CSS height
+            //the + prefix casts it to an integer
+            //the slice method gets rid of "px"
+            let style_height = +getComputedStyle(canvas).getPropertyValue("height").slice(0, -2);
+            //get CSS width
+            let style_width = +getComputedStyle(canvas).getPropertyValue("width").slice(0, -2);
+            //scale the canvas
+            canvas.setAttribute('height', style_height * dpi);
+            canvas.setAttribute('width', style_width * dpi);
+        }
+
+
+        function drawRect(top, left, width, height, color) {
+            var canvas = document.querySelector("canvas");
+            var ctx = canvas.getContext("2d");
+            // Red rectangle
+            ctx.beginPath();
+            ctx.lineWidth = "1em";
+            ctx.strokeStyle = "red";
+            ctx.rect(left * dpi, top * dpi, width * dpi, height * dpi); 
+            ctx.stroke();       
+        }
+
+        function addLayout(path)
+        {
+            //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
+            fetch(path).then(function (response) {
+                // The API call was successful!
+                return response.json();
+            }).then(function (data) {
+                // This is the JSON from our response
+                console.log(data);
+                //https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2-preview/operations/GetAnalyzeLayoutResult
+                data.analyzeResult.readResults.forEach((page)=>{
+                    page.lines.forEach(line=>{
+                       /*
+                        BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
+                        EXAMPLE: 
+                          0  0.5384, left
+                          1  1.1583, top   
+                          2  1.4466, right
+                          3  1.1583, top
+                          4  1.4466, right
+                          5  1.3534, bottom
+                          6  0.5384, left
+                          7  1.3534 bottom
+                        */
+                        var ratio =  window.screen.width/window.screen.height;
+                        var left = line.boundingBox[0];
+                        var top  = line.boundingBox[1]; 
+                        var right = line.boundingBox[2];
+                        var bottom = line.boundingBox[5];
+                        var height = bottom - top
+                        var width  = right - left
+                        
+                       if(page.unit == "inch")
+                       {        
+                         left *= 96;
+                         left -= 94*.3
+                         right *= 96
+                         right -= 94*.3
+
+                         top *= 96; 
+                         top -= 94;
+                         bottom *= 96;
+                         bottom -= 94;
+
+                         height *= 96
+                         width  *= 96
+                         
+                       }
+                       drawRect(top, left, width, height)
+                       rectangles.push([left,top,right,bottom, line]);
+                    })
+                });
+            }).catch(function (err) {
+                console.warn(err);
+            });
+        }
+  
+
+        function Initialize(img) {
+            console.log(dpi)
+            console.log(img.offsetHeight)
+            console.log(img.offsetWidth)
+            console.log(img.height)
+            console.log(img.width)
+            console.log(img.naturalHeight)
+            console.log(img.naturalWidth)
+            overlayCanvas(img);
+            fix_dpi();
+            addLayout("https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/Invoice_1.pdf.ocr.json");
+        }
+    </script>
+</head>
+
+<body>
+    <div id="container">
+        <img class='img' src="https://docs.microsoft.com/en-us/azure/cognitive-services/form-recognizer/media/contoso-invoice.png" onload="Initialize(this)"/>
+        <canvas id="canvas"></canvas>
+    </div>
+</body>
+
+</html>
