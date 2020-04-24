@@ -1,5 +1,5 @@
 <html>
-    <!--
+<!--
     /**************************
     * Canvas Document Overlay.
     * David Eker, 2020
@@ -7,9 +7,9 @@
     -->
 
 <head>
-     <!-- Required meta tags -->
-     <meta charset="utf-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <style>
         body {
             text-align: center;
@@ -38,25 +38,123 @@
             margin: 0 auto;
             background: black;
             position: relative;
-            border-radius: 10px; 
+            border-radius: 10px;
             box-shadow: 0 5px 50px #333;
             top: 0px;
             left: 0px;
             z-index: 0;
         }
 
-        map {
-            position: fixed;
+        .float-nav {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2;
         }
 
-        area {
-            border: 3px solid black;
-            z-index: 1;
-            position: fixed;
+        .float-nav>a.menu-btn {
+            text-decoration: none;
+            display: block;
+            background-color: #3370cc;
+            color: white;
+            padding: 17px 19px 12px 19px;
+            text-align: center;
+            box-shadow: 2px 2px 8px #777;
+            border-radius: 300px;
+        }
+
+        .float-nav>a.menu-btn.active {
+            transition: background-color 250ms linear;
+            background-color: transparent;
+            box-shadow: none;
+        }
+
+        .float-nav>a.menu-btn.active>ul>li.line:nth-child(1) {
+            border-width: 2px;
+            -moz-transform: rotate(45deg) translate(4px, 6px);
+            -ms-transform: rotate(45deg) translate(4px, 6px);
+            -webkit-transform: rotate(45deg) translate(4px, 6px);
+            transform: rotate(45deg) translate(4px, 6px);
+        }
+
+        .float-nav>a.menu-btn.active>ul>li.line:nth-child(2) {
+            visibility: hidden;
+        }
+
+        .float-nav>a.menu-btn.active>ul>li.line:nth-child(3) {
+            border-width: 2px;
+            -moz-transform: rotate(-45deg) translate(8px, -10px);
+            -ms-transform: rotate(-45deg) translate(8px, -10px);
+            -webkit-transform: rotate(-45deg) translate(8px, -10px);
+            transform: rotate(-45deg) translate(8px, -10px);
+        }
+
+        .float-nav>a.menu-btn>ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .float-nav>a.menu-btn>ul>li.line {
+            border: 1px solid white;
+            width: 100%;
+            margin-bottom: 7px;
+            -moz-transition-duration: 0.1s;
+            -o-transition-duration: 0.1s;
+            -webkit-transition-duration: 0.1s;
+            transition-duration: 0.1s;
+        }
+
+        .float-nav>a.menu-btn>.menu-txt {
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            font-family: sans-serif;
+        }
+
+        .main-nav {
+            display: none;
+            opacity: 0;
+            font-family: sans-serif;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            transition: opacity 250ms;
+        }
+
+        .main-nav.active {
+            display: block;
+            opacity: 1;
+            transition: opacity 250ms;
+        }
+
+        .main-nav>ul {
+            width: 100%;
+            display: block;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            background-color: #3370cc;
+            box-shadow: 2px 2px 8px #777;
+            border-radius: 3px 3px 33.5px 3px;
+        }
+
+        .main-nav>ul>li>a {
+            text-decoration: none;
+            display: block;
+            font-weight: 50;
+            padding: 18px 80px 18px 18px;
+            color: white;
+        }
+
+        .main-nav>ul>li>a:hover {
+            font-weight: 400;
         }
     </style>
     <script>
         var rectangles = [];
+        var readRectangles = [];
+        var pageRectangles = [];
 
         function overlayCanvas(img) {
             var container = document.querySelector("#container");
@@ -75,19 +173,16 @@
                     y: e.offsetY
                 };
                 var i = 0;
-                while(i < rectangles.length && !isIntersect(pos, rectangles[i]))
-                {
+                while (i < rectangles.length && !isIntersect(pos, rectangles[i])) {
                     i++;
                 }
             });
         }
 
-              
-        function isIntersect(pos, rect)
-        {
-            var result = pos.x - rect[0] > 0 && pos.y - rect[1] > 0 && pos.x - rect[2] < 0 && pos.y - rect[3] < 0; 
-            if(result)
-            {
+
+        function isIntersect(pos, rect) {
+            var result = pos.x - rect[0] > 0 && pos.y - rect[1] > 0 && pos.x - rect[2] < 0 && pos.y - rect[3] < 0;
+            if (result) {
                 console.log(rect[4]);
             }
             return result;
@@ -118,12 +213,11 @@
             ctx.beginPath();
             ctx.lineWidth = "1em";
             ctx.strokeStyle = "red";
-            ctx.rect(left * dpi, top * dpi, width * dpi, height * dpi); 
-            ctx.stroke();       
+            ctx.rect(left * dpi, top * dpi, width * dpi, height * dpi);
+            ctx.stroke();
         }
 
-        function addLayout(path)
-        {
+        function addReadLayout(path) {
             //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
             fetch(path).then(function (response) {
                 // The API call was successful!
@@ -132,53 +226,110 @@
                 // This is the JSON from our response
                 console.log(data);
                 //https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2-preview/operations/GetAnalyzeLayoutResult
-                data.analyzeResult.readResults.forEach((page)=>{
-                    page.lines.forEach(line=>{
-                       /*
-                        BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
-                        EXAMPLE: 
-                          0  0.5384, left
-                          1  1.1583, top   
-                          2  1.4466, right
-                          3  1.1583, top
-                          4  1.4466, right
-                          5  1.3534, bottom
-                          6  0.5384, left
-                          7  1.3534 bottom
-                        */
-                        var ratio =  window.screen.width/window.screen.height;
+                data.analyzeResult.readResults.forEach((page) => {
+                    page.lines.forEach(line => {
+                        /*
+                         BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
+                         EXAMPLE: 
+                           0  0.5384, left
+                           1  1.1583, top   
+                           2  1.4466, right
+                           3  1.1583, top
+                           4  1.4466, right
+                           5  1.3534, bottom
+                           6  0.5384, left
+                           7  1.3534 bottom
+                         */
+                        var ratio = window.screen.width / window.screen.height;
                         var left = line.boundingBox[0];
-                        var top  = line.boundingBox[1]; 
+                        var top = line.boundingBox[1];
                         var right = line.boundingBox[2];
                         var bottom = line.boundingBox[5];
                         var height = bottom - top
-                        var width  = right - left
-                        
-                       if(page.unit == "inch")
-                       {        
-                         left *= 96;
-                         left -= 94*.3
-                         right *= 96
-                         right -= 94*.3
+                        var width = right - left
 
-                         top *= 96; 
-                         top -= 94;
-                         bottom *= 96;
-                         bottom -= 94;
+                        if (page.unit == "inch") {
+                            left *= 96;
+                            left -= 94 * .3
+                            right *= 96
+                            right -= 94 * .3
 
-                         height *= 96
-                         width  *= 96
-                         
-                       }
-                       drawRect(top, left, width, height)
-                       rectangles.push([left,top,right,bottom, line]);
+                            top *= 96;
+                            top -= 94;
+                            bottom *= 96;
+                            bottom -= 94;
+
+                            height *= 96
+                            width *= 96
+
+                        }
+                        drawRect(top, left, width, height)
+                        readRectangles.push([left, top, right, bottom, line]);
                     })
                 });
+                rectangles = readRectangles;
             }).catch(function (err) {
                 console.warn(err);
             });
         }
-  
+
+        function addPageLayout(path) {
+            //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
+            fetch(path).then(function (response) {
+                // The API call was successful!
+                return response.json();
+            }).then(function (data) {
+                // This is the JSON from our response
+                console.log(data);
+                //https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2-preview/operations/GetAnalyzeLayoutResult
+                data.analyzeResult.pageResults.forEach((page) => {
+                    page.tables.forEach(table => {
+                        table.cells.forEach(cell => {
+                            /*
+                                BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
+                                EXAMPLE: 
+                                0  0.5384, left
+                                1  1.1583, top   
+                                2  1.4466, right
+                                3  1.1583, top
+                                4  1.4466, right
+                                5  1.3534, bottom
+                                6  0.5384, left
+                                7  1.3534 bottom
+                                */
+                            var ratio = window.screen.width / window.screen.height;
+                            var left = cell.boundingBox[0];
+                            var top = cell.boundingBox[1];
+                            var right = cell.boundingBox[2];
+                            var bottom = cell.boundingBox[5];
+                            var height = bottom - top
+                            var width = right - left
+                            console.log(page.page)
+                            if (data.analyzeResult.readResults[Number(page.page)-1].unit == "inch") {
+                                left *= 96;
+                                left -= 94 * .3
+                                right *= 96
+                                right -= 94 * .3
+
+                                top *= 96;
+                                top -= 94;
+                                bottom *= 96;
+                                bottom -= 94;
+
+                                height *= 96
+                                width *= 96
+
+                            }
+                            drawRect(top, left, width, height)
+                            pageRectangles.push([left, top, right, bottom, cell.text]);
+                        })
+                    })
+                });
+                rectangles = pageRectangles;
+            }).catch(function (err) {
+                console.warn(err);
+            });
+        }
 
         function Initialize(img) {
             console.log(dpi)
@@ -190,16 +341,41 @@
             console.log(img.naturalWidth)
             overlayCanvas(img);
             fix_dpi();
-            addLayout("https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/Invoice_1.pdf.ocr.json");
+            addReadLayout("https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/Invoice_1.pdf.ocr.json");
         }
     </script>
 </head>
 
 <body>
     <div id="container">
-        <img class='img' src="https://docs.microsoft.com/en-us/azure/cognitive-services/form-recognizer/media/contoso-invoice.png" onload="Initialize(this)"/>
+        <img class='img'
+            src="https://docs.microsoft.com/en-us/azure/cognitive-services/form-recognizer/media/contoso-invoice.png"
+            onload="Initialize(this)" />
         <canvas id="canvas"></canvas>
     </div>
+    <div class="float-nav">
+        <a href="#" class="menu-btn">
+            <ul>
+                <li class="line"></li>
+                <li class="line"></li>
+                <li class="line"></li>
+            </ul>
+            <div class="menu-txt">menu</div>
+        </a>
+    </div>
+
+    <div class="main-nav">
+        <ul>
+            <li><a href="#" onclick="addReadLayout('https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/Invoice_1.pdf.ocr.json')"> Read Results</a></li>
+            <li><a href="#" onclick="addPageLayout('https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/Invoice_1.pdf.ocr.json')"> Page Results</a></li>
+        </ul>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script id="rendered-js">
+        $('.float-nav').click(function () {
+            $('.main-nav, .menu-btn').toggleClass('active');
+        });
+    </script>
 </body>
 
 </html>
