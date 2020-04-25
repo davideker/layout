@@ -1,5 +1,7 @@
 ### HTML5 Azure Form Recognizer Layout API Results Formatter
 
+![alt text](https://raw.githubusercontent.com/davideker/layout/d341b262ce50e0ba6a2955cc448c345908dd3f1f/example.png)
+
 > **HTML5** utility that makes the **JSON** results of the [**Azure Form Recognizer Layout API**]("https://docs.microsoft.com/en-us/azure/cognitive-services/form-recognizer/quickstarts/python-layout") more comprehensible. The new version supports toggling read and page layout layers and tooltips that show the predictions and confidence level of each highlighted element.
 
 To format the results of an API call, manually or programatically, replace the image source with a link to your document ...
@@ -21,7 +23,5 @@ You **MUST** use links to resources served from an **HTTP** compatible web serve
 ```javascript
 npx http-server
 ```
----
 
-![alt text](https://raw.githubusercontent.com/davideker/layout/d341b262ce50e0ba6a2955cc448c345908dd3f1f/example.png)
 
