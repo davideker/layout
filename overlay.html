@@ -45,6 +45,10 @@
             z-index: 0;
         }
 
+        .hidden {
+            display: none;
+        }
+
         .float-nav {
             position: absolute;
             bottom: 20px;
@@ -150,19 +154,60 @@
         .main-nav>ul>li>a:hover {
             font-weight: 400;
         }
+
+        #tooltip {
+            background: #333;
+            color: white;
+            font-weight: bold;
+            padding: 4px 8px;
+            font-size: 13px;
+            border-radius: 4px;
+            visibility: hidden;
+        }
+
+        #arrow,
+        #arrow::before {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            z-index: -1;
+        }
+
+        #arrow::before {
+            content: '';
+            transform: rotate(45deg);
+            background: #333;
+        }
+
+        #tooltip[data-popper-placement^='top']>#arrow {
+            bottom: -4px;
+        }
+
+        #tooltip[data-popper-placement^='bottom']>#arrow {
+            top: -4px;
+        }
+
+        #tooltip[data-popper-placement^='left']>#arrow {
+            right: -4px;
+        }
+
+        #tooltip[data-popper-placement^='right']>#arrow {
+            left: -4px;
+        }
     </style>
     <script>
         var rectangles = [];
         var readRectangles = [];
         var pageRectangles = [];
+        const json = "https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/Invoice_1.pdf.ocr.json";
 
-        function overlayCanvas(img) {
+        function overlayCanvas(img, id) {
             var container = document.querySelector("#container");
             console.log(container);
             container.style.width = img.width;
             container.style.height = img.height;
-
-            var canvas = document.querySelector("canvas");
+            console.log(id);
+            var canvas = document.querySelector(id);
             console.log(canvas);
             canvas.style.width = img.width;
             canvas.style.height = img.height;
@@ -176,9 +221,24 @@
                 while (i < rectangles.length && !isIntersect(pos, rectangles[i])) {
                     i++;
                 }
+                if(i < rectangles.length)
+                {
+                    var words = [];
+                    rectangles[i][4].words.forEach(word=>{
+                        words.push(word.text + " <i>" + word.confidence * 100 + "%</i>")
+                    });
+                    tooltip.innerHTML = words.join("<br/>");
+                    virtualElement.getBoundingClientRect = generateGetBoundingClientRect(e.clientX-4, e.clientY+4);
+                    instance.update();
+                    tooltip.style.visibility = "visible"
+                }
             });
-        }
 
+            canvas.addEventListener('mouseout', (e) => {
+                tooltip.style.visibility = "hidden";
+            });
+
+        }
 
         function isIntersect(pos, rect) {
             var result = pos.x - rect[0] > 0 && pos.y - rect[1] > 0 && pos.x - rect[2] < 0 && pos.y - rect[3] < 0;
@@ -190,8 +250,8 @@
 
         //https://medium.com/wdstack/fixing-html5-2d-canvas-blur-8ebe27db07da
         let dpi = window.devicePixelRatio;
-        function fix_dpi() {
-            let canvas = document.getElementById('canvas');
+        function fix_dpi(id) {
+            let canvas = document.querySelector(id);
             //get context
             let ctx = canvas.getContext('2d');
             //get CSS height
@@ -205,19 +265,18 @@
             canvas.setAttribute('width', style_width * dpi);
         }
 
-
-        function drawRect(top, left, width, height, color) {
-            var canvas = document.querySelector("canvas");
+        function drawRect(id, top, left, width, height, color) {
+            var canvas = document.querySelector(id);
             var ctx = canvas.getContext("2d");
             // Red rectangle
             ctx.beginPath();
             ctx.lineWidth = "1em";
-            ctx.strokeStyle = "red";
+            ctx.strokeStyle = color;
             ctx.rect(left * dpi, top * dpi, width * dpi, height * dpi);
             ctx.stroke();
         }
 
-        function addReadLayout(path) {
+        function addReadLayout(id, path) {
             //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
             fetch(path).then(function (response) {
                 // The API call was successful!
@@ -263,7 +322,7 @@
                             width *= 96
 
                         }
-                        drawRect(top, left, width, height)
+                        drawRect(id, top, left, width, height, "red")
                         readRectangles.push([left, top, right, bottom, line]);
                     })
                 });
@@ -273,7 +332,7 @@
             });
         }
 
-        function addPageLayout(path) {
+        function addPageLayout(id, path) {
             //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
             fetch(path).then(function (response) {
                 // The API call was successful!
@@ -305,7 +364,7 @@
                             var height = bottom - top
                             var width = right - left
                             console.log(page.page)
-                            if (data.analyzeResult.readResults[Number(page.page)-1].unit == "inch") {
+                            if (data.analyzeResult.readResults[Number(page.page) - 1].unit == "inch") {
                                 left *= 96;
                                 left -= 94 * .3
                                 right *= 96
@@ -320,7 +379,7 @@
                                 width *= 96
 
                             }
-                            drawRect(top, left, width, height)
+                            drawRect(id, top, left, width, height, "red")
                             pageRectangles.push([left, top, right, bottom, cell.text]);
                         })
                     })
@@ -339,9 +398,19 @@
             console.log(img.width)
             console.log(img.naturalHeight)
             console.log(img.naturalWidth)
-            overlayCanvas(img);
-            fix_dpi();
-            addReadLayout("https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/Invoice_1.pdf.ocr.json");
+            overlayCanvas(img, "#read-canvas");
+            overlayCanvas(img, "#page-canvas");
+            fix_dpi("#read-canvas");
+            fix_dpi("#page-canvas");
+            addPageLayout("#page-canvas", json);
+            addReadLayout("#read-canvas", json);
+        }
+
+        function addLayout(element) {
+            var canvas = document.querySelector('#' + element.className + "-canvas");
+            if (canvas) {
+                canvas.classList.toggle("hidden");
+            }
         }
     </script>
 </head>
@@ -351,7 +420,8 @@
         <img class='img'
             src="https://docs.microsoft.com/en-us/azure/cognitive-services/form-recognizer/media/contoso-invoice.png"
             onload="Initialize(this)" />
-        <canvas id="canvas"></canvas>
+        <canvas id="read-canvas" class="read-canvas"></canvas>
+        <canvas id="page-canvas" class="page-canvas"></canvas>
     </div>
     <div class="float-nav">
         <a href="#" class="menu-btn">
@@ -366,15 +436,44 @@
 
     <div class="main-nav">
         <ul>
-            <li><a href="#" onclick="addReadLayout('https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/Invoice_1.pdf.ocr.json')"> Read Results</a></li>
-            <li><a href="#" onclick="addPageLayout('https://raw.githubusercontent.com/Azure-Samples/cognitive-services-REST-api-samples/master/curl/form-recognizer/Invoice_1.pdf.ocr.json')"> Page Results</a></li>
+            <li><a href="#" class="read" onclick="addLayout(this)"> Read Results</a></li>
+            <li><a href="#" class="page" onclick="addLayout(this)"> Page Results</a></li>
         </ul>
     </div>
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+
+    <!--//https://www.w3schools.com/css/css_tooltip.asp//-->
+    <div id="tooltip" role="tooltip">
+        My tooltip
+        <div id="arrow" data-popper-arrow></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script id="rendered-js">
         $('.float-nav').click(function () {
             $('.main-nav, .menu-btn').toggleClass('active');
         });
+
+        const virtualElement = {
+            getBoundingClientRect: generateGetBoundingClientRect(),
+        };
+
+        const tooltip = document.querySelector('#tooltip');
+        const instance = Popper.createPopper(virtualElement, tooltip);
+
+        function generateGetBoundingClientRect(x = 0, y = 0) {
+            return () => ({
+                width: 0,
+                height: 0,
+                top: y,
+                right: x,
+                bottom: y,
+                left: x,
+            });
+        }
+
     </script>
 </body>
 
