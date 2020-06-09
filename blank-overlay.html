@@ -222,14 +222,13 @@
                 while (i < rectangles.length && !isIntersect(pos, rectangles[i])) {
                     i++;
                 }
-                if(i < rectangles.length)
-                {
+                if (i < rectangles.length) {
                     var words = [];
-                    rectangles[i][4].words.forEach(word=>{
+                    rectangles[i][4].words.forEach(word => {
                         words.push(word.text + " <i>" + word.confidence * 100 + "%</i>")
                     });
                     tooltip.innerHTML = words.join("<br/>");
-                    virtualElement.getBoundingClientRect = generateGetBoundingClientRect(e.clientX-4, e.clientY+4);
+                    virtualElement.getBoundingClientRect = generateGetBoundingClientRect(e.clientX - 4, e.clientY + 4);
                     instance.update();
                     tooltip.style.visibility = "visible"
                 }
@@ -251,6 +250,7 @@
 
         //https://medium.com/wdstack/fixing-html5-2d-canvas-blur-8ebe27db07da
         let dpi = window.devicePixelRatio;
+
         function fix_dpi(id) {
             let canvas = document.querySelector(id);
             //get context
@@ -266,14 +266,13 @@
             canvas.setAttribute('width', style_width * dpi);
         }
 
-        function drawText(id, top, left, width, height, line)
-        {
+        function drawText(id, top, left, width, height, line) {
             var canvas = document.querySelector(id);
-            var text = line.words.map((item)=>item.text).join(" ")
-            var size = (width/text.length) * Math.pow(dpi,2.125)
+            var text = line.words.map((item) => item.text).join(" ")
+            var size = (width / text.length) * Math.pow(dpi, 2.125)
             var ctx = canvas.getContext("2d");
             ctx.font = `${size}px serif`
-            var adjustment = ((size/2)-2*dpi)
+            var adjustment = height //((size / 2) - 2 * dpi)
             ctx.fillText(text, left * dpi, (top + adjustment) * dpi)
         }
 
@@ -288,29 +287,9 @@
             ctx.stroke();
         }
 
-        function addReadLayout(id, path) {
-            //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
-            fetch(path).then(function (response) {
-                // The API call was successful!
-                return response.json();
-            }).then(function (data) {
-                // This is the JSON from our response
-                console.log(data);
-                //https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2-preview/operations/GetAnalyzeLayoutResult
-                data.analyzeResult.readResults.forEach((page) => {
+        function addReadLayout(id, data) {
+            data.analyzeResult.readResults.forEach((page) => {
                     page.lines.forEach(line => {
-                        /*
-                         BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
-                         EXAMPLE: 
-                           0  0.5384, left
-                           1  1.1583, top   
-                           2  1.4466, right
-                           3  1.1583, top
-                           4  1.4466, right
-                           5  1.3534, bottom
-                           6  0.5384, left
-                           7  1.3534 bottom
-                         */
                         var ratio = window.screen.width / window.screen.height;
                         var left = line.boundingBox[0];
                         var top = line.boundingBox[1];
@@ -338,102 +317,22 @@
                         readRectangles.push([left, top, right, bottom, line]);
                     })
                 });
-                rectangles = readRectangles;
-            }).catch(function (err) {
-                console.warn(err);
-            });
+            rectangles = readRectangles;
         }
 
-        function addPageLayout(id, path) {
-            //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
-            fetch(path).then(function (response) {
-                // The API call was successful!
-                return response.json();
-            }).then(function (data) {
-                // This is the JSON from our response
-                console.log(data);
-                //https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2-preview/operations/GetAnalyzeLayoutResult
-                data.analyzeResult.pageResults.forEach((page) => {
-                    page.tables.forEach(table => {
-                        table.cells.forEach(cell => {
-                            /*
-                                BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
-                                EXAMPLE: 
-                                0  0.5384, left
-                                1  1.1583, top   
-                                2  1.4466, right
-                                3  1.1583, top
-                                4  1.4466, right
-                                5  1.3534, bottom
-                                6  0.5384, left
-                                7  1.3534 bottom
-                                */
-                            var ratio = window.screen.width / window.screen.height;
-                            var left = cell.boundingBox[0];
-                            var top = cell.boundingBox[1];
-                            var right = cell.boundingBox[2];
-                            var bottom = cell.boundingBox[5];
-                            var height = bottom - top
-                            var width = right - left
-                            console.log(page.page)
-                            if (data.analyzeResult.readResults[Number(page.page) - 1].unit == "inch") {
-                                left *= 96;
-                                left -= 94 * .3
-                                right *= 96
-                                right -= 94 * .3
-
-                                top *= 96;
-                                top -= 94;
-                                bottom *= 96;
-                                bottom -= 94;
-
-                                height *= 96
-                                width *= 96
-
-                            }
-                            drawRect(id, top, left, width, height, "red")
-                            pageRectangles.push([left, top, right, bottom, cell.text]);
-                        })
-                    })
-                });
-                rectangles = pageRectangles;
-            }).catch(function (err) {
-                console.warn(err);
-            });
-        }
-
-        function addTextLayout(id, path) {
-            //https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
-            fetch(path).then(function (response) {
-                // The API call was successful!
-                return response.json();
-            }).then(function (data) {
-                // This is the JSON from our response
-                console.log(data);
-                //https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2-preview/operations/GetAnalyzeLayoutResult
-                data.analyzeResult.readResults.forEach((page) => {
-                    page.lines.forEach(line => {
-                        /*
-                         BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
-                         EXAMPLE: 
-                           0  0.5384, left
-                           1  1.1583, top   
-                           2  1.4466, right
-                           3  1.1583, top
-                           4  1.4466, right
-                           5  1.3534, bottom
-                           6  0.5384, left
-                           7  1.3534 bottom
-                         */
+        function addPageLayout(id, data) {
+            data.analyzeResult.pageResults.forEach((page) => {
+                page.tables.forEach(table => {
+                    table.cells.forEach(cell => {
                         var ratio = window.screen.width / window.screen.height;
-                        var left = line.boundingBox[0];
-                        var top = line.boundingBox[1];
-                        var right = line.boundingBox[2];
-                        var bottom = line.boundingBox[5];
+                        var left = cell.boundingBox[0];
+                        var top = cell.boundingBox[1];
+                        var right = cell.boundingBox[2];
+                        var bottom = cell.boundingBox[5];
                         var height = bottom - top
                         var width = right - left
-
-                        if (page.unit == "inch") {
+                        console.log(page.page)
+                        if (data.analyzeResult.readResults[Number(page.page) - 1].unit == "inch") {
                             left *= 96;
                             left -= 94 * .3
                             right *= 96
@@ -448,14 +347,46 @@
                             width *= 96
 
                         }
-                        drawText(id, top, left, width, height, line)
-                        textRectangles.push([left, top, right, bottom, line]);
+                        drawRect(id, top, left, width, height, "red")
+                        pageRectangles.push([left, top, right, bottom, cell.text]);
                     })
-                });
-                rectangles = textRectangles;
-            }).catch(function (err) {
-                console.warn(err);
+                })
             });
+            rectangles = pageRectangles;
+        }
+
+        function addTextLayout(id, data) {        
+            data.analyzeResult.readResults.forEach((page) => {
+                page.lines.forEach(line => {
+                   
+                    var ratio = window.screen.width / window.screen.height;
+                    var left = line.boundingBox[0];
+                    var top = line.boundingBox[1];
+                    var right = line.boundingBox[2];
+                    var bottom = line.boundingBox[5];
+                    var height = bottom - top
+                    var width = right - left
+
+                    if (page.unit == "inch") {
+                        left *= 96;
+                        left -= 94 * .3
+                        right *= 96
+                        right -= 94 * .3
+
+                        top *= 96;
+                        top -= 94;
+                        bottom *= 96;
+                        bottom -= 94;
+
+                        height *= 96
+                        width *= 96
+
+                    }
+                    drawText(id, top, left, width, height, line)
+                    textRectangles.push([left, top, right, bottom, line]);
+                })
+            })
+            rectangles = textRectangles;
         }
 
         function Initialize(img) {
@@ -472,9 +403,30 @@
             fix_dpi("#read-canvas");
             fix_dpi("#page-canvas");
             fix_dpi("#text-canvas");
-            addPageLayout("#page-canvas", json);
-            addReadLayout("#read-canvas", json);
-            addTextLayout("#text-canvas", json);
+            fetch(json).then(function (response) {
+                 /*****************************************************
+                    The API call was successful!
+                    https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
+                    https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2-preview/operations/GetAnalyzeLayoutResult
+                    BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
+                    EXAMPLE: 
+                    0  0.5384, left
+                    1  1.1583, top   
+                    2  1.4466, right
+                    3  1.1583, top
+                    4  1.4466, right
+                    5  1.3534, bottom
+                    6  0.5384, left
+                    7  1.3534 bottom
+                **********************************************************/
+                return response.json();
+            }).then(function (data) {
+                addPageLayout("#page-canvas", data);
+                addReadLayout("#read-canvas", data);
+                addTextLayout("#text-canvas", data);
+            }).catch(function (err) {
+                console.warn(err);
+            });
         }
 
         function addLayout(element) {
@@ -488,9 +440,7 @@
 
 <body>
     <div id="container">
-        <img class='img'
-            src="contoso-invoice-blank.png"
-            onload="Initialize(this)" />
+        <img class='img' src="contoso-invoice.png" onload="Initialize(this)" />
         <canvas id="read-canvas" class="read-canvas"></canvas>
         <canvas id="page-canvas" class="page-canvas"></canvas>
         <canvas id="text-canvas" class="text-canvas"></canvas>
