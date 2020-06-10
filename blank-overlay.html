@@ -194,6 +194,36 @@
         #tooltip[data-popper-placement^='right']>#arrow {
             left: -4px;
         }
+
+        .popper {
+            background: rgba(255, 193, 7, 1);
+            padding: 10px;
+            text-align: left;
+            visibility: hidden;
+            font-family: Arial, Helvetica, sans-serif;
+
+        }
+
+        .popper.arrow {
+            width: 0;
+            height: 0;
+            border-style: solid;
+            position: absolute;
+            margin: 5px;
+        }
+
+        .popper[x-placement^="bottom"] {
+            margin-top: 5px;
+        }
+
+        .popper.arrow {
+            border-width: 0 5px 5px 5px;
+            border-color: transparent transparent rgba(255, 193, 7, 1) transparent;
+            top: -5px;
+            left: calc(50% - 5px);
+            margin-top: 0;
+            margin-bottom: 0;
+        }
     </style>
     <script>
         var rectangles = [];
@@ -201,6 +231,67 @@
         var pageRectangles = [];
         var textRectangles = [];
         const json = "invoice_1.pdf.ocr.json";
+        //https://medium.com/wdstack/fixing-html5-2d-canvas-blur-8ebe27db07da
+        const dpi = window.devicePixelRatio;
+
+        function editCanvas(img, id) {
+            var container = document.querySelector("#container");
+            console.log(container);
+            container.style.width = img.width;
+            container.style.height = img.height;
+            console.log(id);
+            var canvas = document.querySelector(id);
+            console.log(canvas);
+            canvas.style.width = img.width;
+            canvas.style.height = img.height;
+            //https://lavrton.com/hit-region-detection-for-html5-canvas-and-how-to-listen-to-click-events-on-canvas-shapes-815034d7e9f8/
+            canvas.addEventListener('click', (e) => {
+                const pos = {
+                    x: e.offsetX,
+                    y: e.offsetY
+                };
+                var i = 0;
+                while (i < rectangles.length && !isIntersect(pos, rectangles[i])) {
+                    i++;
+                }
+                if (i < rectangles.length) {
+                    let left = rectangles[i][0]
+                    let top = rectangles[i][1];
+                    let right = rectangles[i][2]
+                    let bottom = rectangles[i][3]
+                    var height = bottom - top
+                    var width = right - left
+                    
+                    
+                    var words = [];
+                    var text = rectangles[i][4].words.map((item) => item.text).join(" ")
+                    var size = (width / text.length) * dpi//* Math.pow(dpi, 2.125)
+
+                    var input = document.createElement("input");
+                        input.style.position = "absolute";
+                        input.type = "text"
+                        input.enabled = true;
+                        input.style.top = `${top}px`;
+                        input.style.left = `${left}px`;
+                        input.style.width = `${width * 1.25}px`;
+                        input.style.height = `${height}px`;
+                        input.style.margin = '1px';
+                        input.style.border = '0px';
+                        input.style.fontSize = `${size}px`;
+                        input.style.zIndex = 500;
+                        //input.style.background = "transparent"
+                        input.value = text;
+                        input = container.appendChild(input)
+                        input.style.display = "inherit"
+
+                }
+            });
+
+            canvas.addEventListener('mouseout', (e) => {
+                //input.style.visibility = "hidden";
+            });
+
+        }
 
         function overlayCanvas(img, id) {
             var container = document.querySelector("#container");
@@ -225,7 +316,7 @@
                 if (i < rectangles.length) {
                     var words = [];
                     rectangles[i][4].words.forEach(word => {
-                        words.push(word.text + " <i>" + word.confidence * 100 + "%</i>")
+                        words.push(`<span style="float:left">${word.text}</span><span style="float:right">&nbsp;(${word.confidence * 100 }%)</span>`)
                     });
                     tooltip.innerHTML = words.join("<br/>");
                     virtualElement.getBoundingClientRect = generateGetBoundingClientRect(e.clientX - 4, e.clientY + 4);
@@ -239,7 +330,7 @@
             });
 
         }
-
+        
         function isIntersect(pos, rect) {
             var result = pos.x - rect[0] > 0 && pos.y - rect[1] > 0 && pos.x - rect[2] < 0 && pos.y - rect[3] < 0;
             if (result) {
@@ -247,9 +338,6 @@
             }
             return result;
         }
-
-        //https://medium.com/wdstack/fixing-html5-2d-canvas-blur-8ebe27db07da
-        let dpi = window.devicePixelRatio;
 
         function fix_dpi(id) {
             let canvas = document.querySelector(id);
@@ -287,36 +375,60 @@
             ctx.stroke();
         }
 
+        function drawInput(id, top, left, width, height, line) {
+            var canvas = document.querySelector(id);
+            var text = line.words.map((item) => item.text).join(" ")
+            var size = (width / text.length) * dpi; //Math.pow(dpi, 2.125)
+            var input = document.createElement("input");
+                        input.style.position = "absolute";
+                        input.type = "text"
+                        input.enabled = true;
+                        input.style.top = `${top-dpi}px`;
+                        input.style.left = `${left}px`;
+                        input.style.width = `${width + dpi}px`;
+                        //input.style.height = `${height}px`;
+                        input.style.margin = '0px';
+                        input.style.border = '0px';
+                        input.style.fontSize = `${size-dpi}px`;
+                        input.style.zIndex = 500;
+                        input.style.background = "transparent"
+                        input.value = text;
+                        input = container.appendChild(input)
+                        input.style.display = "inherit"
+            input = container.appendChild(input)
+            input.style.display = "inherit"
+        }
+
         function addReadLayout(id, data) {
             data.analyzeResult.readResults.forEach((page) => {
-                    page.lines.forEach(line => {
-                        var ratio = window.screen.width / window.screen.height;
-                        var left = line.boundingBox[0];
-                        var top = line.boundingBox[1];
-                        var right = line.boundingBox[2];
-                        var bottom = line.boundingBox[5];
-                        var height = bottom - top
-                        var width = right - left
+                page.lines.forEach(line => {
+                    var ratio = window.screen.width / window.screen.height;
+                    var left = line.boundingBox[0];
+                    var top = line.boundingBox[1];
+                    var right = line.boundingBox[2];
+                    var bottom = line.boundingBox[5];
+                    var height = bottom - top
+                    var width = right - left
 
-                        if (page.unit == "inch") {
-                            left *= 96;
-                            left -= 94 * .3
-                            right *= 96
-                            right -= 94 * .3
+                    if (page.unit == "inch") {
+                        left *= 96;
+                        left -= 94 * .3
+                        right *= 96
+                        right -= 94 * .3
 
-                            top *= 96;
-                            top -= 94;
-                            bottom *= 96;
-                            bottom -= 94;
+                        top *= 96;
+                        top -= 94;
+                        bottom *= 96;
+                        bottom -= 94;
 
-                            height *= 96
-                            width *= 96
+                        height *= 96
+                        width *= 96
 
-                        }
-                        drawRect(id, top, left, width, height, "red")
-                        readRectangles.push([left, top, right, bottom, line]);
-                    })
-                });
+                    }
+                    drawRect(id, top, left, width, height, "red")
+                    readRectangles.push([left, top, right, bottom, line]);
+                })
+            });
             rectangles = readRectangles;
         }
 
@@ -348,17 +460,17 @@
 
                         }
                         drawRect(id, top, left, width, height, "red")
-                        pageRectangles.push([left, top, right, bottom, cell.text]);
+                        //pageRectangles.push([left, top, right, bottom, cell.text]);
                     })
                 })
             });
-            rectangles = pageRectangles;
+            //rectangles = pageRectangles;
         }
 
-        function addTextLayout(id, data) {        
+        function addTextLayout(id, data) {
             data.analyzeResult.readResults.forEach((page) => {
                 page.lines.forEach(line => {
-                   
+
                     var ratio = window.screen.width / window.screen.height;
                     var left = line.boundingBox[0];
                     var top = line.boundingBox[1];
@@ -383,10 +495,40 @@
 
                     }
                     drawText(id, top, left, width, height, line)
-                    textRectangles.push([left, top, right, bottom, line]);
                 })
             })
-            rectangles = textRectangles;
+        }
+
+        function addEditLayout(id, data) {
+            data.analyzeResult.readResults.forEach((page) => {
+                page.lines.forEach(line => {
+
+                    var ratio = window.screen.width / window.screen.height;
+                    var left = line.boundingBox[0];
+                    var top = line.boundingBox[1];
+                    var right = line.boundingBox[2];
+                    var bottom = line.boundingBox[5];
+                    var height = bottom - top
+                    var width = right - left
+
+                    if (page.unit == "inch") {
+                        left *= 96;
+                        left -= 94 * .3
+                        right *= 96
+                        right -= 94 * .3
+
+                        top *= 96;
+                        top -= 94;
+                        bottom *= 96;
+                        bottom -= 94;
+
+                        height *= 96
+                        width *= 96
+
+                    }
+                    drawInput(id, top, left, width, height, line)
+                })
+            })
         }
 
         function Initialize(img) {
@@ -400,30 +542,33 @@
             overlayCanvas(img, "#read-canvas");
             overlayCanvas(img, "#page-canvas");
             overlayCanvas(img, "#text-canvas");
+            //editCanvas(img, "#edit-canvas");
             fix_dpi("#read-canvas");
             fix_dpi("#page-canvas");
             fix_dpi("#text-canvas");
+            fix_dpi("#edit-canvas");
             fetch(json).then(function (response) {
-                 /*****************************************************
-                    The API call was successful!
-                    https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
-                    https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2-preview/operations/GetAnalyzeLayoutResult
-                    BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
-                    EXAMPLE: 
-                    0  0.5384, left
-                    1  1.1583, top   
-                    2  1.4466, right
-                    3  1.1583, top
-                    4  1.4466, right
-                    5  1.3534, bottom
-                    6  0.5384, left
-                    7  1.3534 bottom
-                **********************************************************/
+                /*****************************************************
+                   The API call was successful!
+                   https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
+                   https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2-preview/operations/GetAnalyzeLayoutResult
+                   BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
+                   EXAMPLE: 
+                   0  0.5384, left
+                   1  1.1583, top   
+                   2  1.4466, right
+                   3  1.1583, top
+                   4  1.4466, right
+                   5  1.3534, bottom
+                   6  0.5384, left
+                   7  1.3534 bottom
+               **********************************************************/
                 return response.json();
             }).then(function (data) {
                 addPageLayout("#page-canvas", data);
                 addReadLayout("#read-canvas", data);
                 addTextLayout("#text-canvas", data);
+                addEditLayout("#edit-canvas", data);
             }).catch(function (err) {
                 console.warn(err);
             });
@@ -435,15 +580,44 @@
                 canvas.classList.toggle("hidden");
             }
         }
+        
+        function addContent(id, canvas) {
+            let alt = id == "#blank" ? "#original" : "#blank";
+            let element = document.querySelector(id)
+            if(element.classList.contains("hidden")) {
+                element.classList.toggle("hidden")
+            }
+            element = document.querySelector(alt)
+            if(!element.classList.contains("hidden")) {
+                element.classList.toggle("hidden")
+            }
+            element = document.querySelector("canvas[class^=text-canvas]")
+            if(!element.classList.contains("hidden")) {
+                element.classList.toggle("hidden")
+            }
+            element = document.querySelector("canvas[class^=edit-canvas]")
+            if(!element.classList.contains("hidden")) {
+                element.classList.toggle("hidden")
+            }
+            element = document.querySelector(`canvas[class^=${canvas}-canvas]`)
+            console.log(element)
+            console.log(canvas)
+            if(element && element.classList.contains("hidden")) {
+                element.classList.toggle("hidden")
+            }
+            
+        }
     </script>
 </head>
 
 <body>
     <div id="container">
-        <img class='img' src="contoso-invoice.png" onload="Initialize(this)" />
+        <img id="original" class="img" src="contoso-invoice.png" onload="Initialize(this)" />
+        <img id="blank" class="img hidden" src="contoso-invoice-blank.png" />
         <canvas id="read-canvas" class="read-canvas"></canvas>
         <canvas id="page-canvas" class="page-canvas"></canvas>
-        <canvas id="text-canvas" class="text-canvas"></canvas>
+        <canvas id="text-canvas" class="text-canvas hidden"></canvas>
+        <canvas id="edit-canvas" class="edit-canvas hidden"></canvas>
     </div>
     <div class="float-nav">
         <a href="#" class="menu-btn">
@@ -458,17 +632,18 @@
 
     <div class="main-nav">
         <ul>
-            <li><a href="#" class="read" onclick="addLayout(this)"> Read Results</a></li>
-            <li><a href="#" class="page" onclick="addLayout(this)"> Page Results</a></li>
-            <li><a href="#" class="text" onclick="addLayout(this)"> Text Results</a></li>
+            <li><a href="#" class="text" onclick="addContent('#original')">Original File</a></li>
+            <li><a href="#" class="text" onclick="addContent('#blank','text')">Text Results</a></li>
+            <li><a href="#" class="text" onclick="addContent('#blank','edit')">Edit Results</a></li>
+            <li><a href="#" class="read" onclick="addLayout(this)">Read Results</a></li>
+            <li><a href="#" class="page" onclick="addLayout(this)">Page Results</a></li>
         </ul>
     </div>
 
     <!--//https://www.w3schools.com/css/css_tooltip.asp//-->
-    <div id="tooltip" role="tooltip">
-        My tooltip
-        <div id="arrow" data-popper-arrow></div>
-    </div>
+    <span id="tooltip-1" class="popper" role="tooltip">
+        <!--span id="arrow-1" class="arrow" data-popper-arrow></span-->
+    </span>
 
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
         integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
@@ -483,8 +658,17 @@
             getBoundingClientRect: generateGetBoundingClientRect(),
         };
 
-        const tooltip = document.querySelector('#tooltip');
-        const instance = Popper.createPopper(virtualElement, tooltip);
+        const tooltip = document.querySelector('#tooltip-1');
+        const instance = Popper.createPopper(virtualElement, tooltip, {
+            modifiers: [
+                {
+                    name: 'offset',
+                    options: {
+                        offset: [0, 8],
+                    },
+                },
+            ],
+        });
 
         function generateGetBoundingClientRect(x = 0, y = 0) {
             return () => ({
@@ -496,6 +680,9 @@
                 left: x,
             });
         }
+        var content = document.querySelector('img').classList;
+        var blank = document.querySelector('img.hidden').classList;
+
 
     </script>
 </body>
