@@ -314,7 +314,7 @@
         function drawText(id, top, left, width, height, line) {
             var canvas = document.querySelector(id);
             var text = line.text; //line.words.map((item) => item.text).join(" ")
-            var size = (width / text.length) * Math.pow(dpi, 2.125)
+            var size = (width / line.words.map((item) => item.text).join(" ").length) * Math.pow(dpi, 2.125)
             var ctx = canvas.getContext("2d");
             ctx.font = `${size}px serif`
             var adjustment = height //((size / 2) - 2 * dpi)
