@@ -62,7 +62,7 @@
             background-color: #3370cc;
             color: white;
             padding: 17px 19px 12px 19px;
-            text-align: center;
+            text-align: left;
             box-shadow: 2px 2px 8px #777;
             border-radius: 300px;
         }
@@ -111,7 +111,7 @@
 
         .float-nav>a.menu-btn>.menu-txt {
             width: 100%;
-            text-align: center;
+            text-align: left;
             font-size: 12px;
             font-family: sans-serif;
         }
@@ -147,8 +147,11 @@
             text-decoration: none;
             display: block;
             font-weight: 50;
-            padding: 18px 80px 18px 18px;
+            padding: 15px 60px 15px 10px;
             color: white;
+            text-align: left;
+            align-content: left;
+            justify-content: left;
         }
 
         .main-nav>ul>li>a:hover {
@@ -237,6 +240,7 @@
         }
     </style>
     <script>
+        var data = {}
         var inputs = [];
         var rectangles = [];
         var readRectangles = [];
@@ -276,7 +280,7 @@
                     
                     
                     var words = [];
-                    var text = rectangles[i][4].words.map((item) => item.text).join(" ")
+                    var text = rectangles[i][4].text; //rectangles[i][4].words.map((item) => item.text).join(" ")
                     var size = (width / text.length) * dpi//* Math.pow(dpi, 2.125)
 
                     var input = document.createElement("input");
@@ -368,7 +372,7 @@
 
         function drawText(id, top, left, width, height, line) {
             var canvas = document.querySelector(id);
-            var text = line.words.map((item) => item.text).join(" ")
+            var text = line.text; //line.words.map((item) => item.text).join(" ")
             var size = (width / text.length) * Math.pow(dpi, 2.125)
             var ctx = canvas.getContext("2d");
             ctx.font = `${size}px serif`
@@ -543,7 +547,7 @@
             })
         }
 
-        function Initialize(img) {
+        function initialize(img) {
             console.log(dpi)
             console.log(img.offsetHeight)
             console.log(img.offsetWidth)
@@ -554,7 +558,6 @@
             overlayCanvas(img, "#read-canvas");
             overlayCanvas(img, "#page-canvas");
             overlayCanvas(img, "#text-canvas");
-            //editCanvas(img, "#edit-canvas");
             fix_dpi("#read-canvas");
             fix_dpi("#page-canvas");
             fix_dpi("#text-canvas");
@@ -576,7 +579,8 @@
                    7  1.3534 bottom
                **********************************************************/
                 return response.json();
-            }).then(function (data) {
+            }).then(function (text) {
+                data = text
                 addPageLayout("#page-canvas", data);
                 addReadLayout("#read-canvas", data);
                 addTextLayout("#text-canvas", data);
@@ -586,14 +590,16 @@
             });
         }
 
-        function addLayout(element) {
+        function showLayout(element) {
             var canvas = document.querySelector('#' + element.className + "-canvas");
             if (canvas) {
                 canvas.classList.toggle("hidden");
             }
         }
         
-        function addContent(id, canvas) {
+        function showContent(id, canvas) {
+            updateData('#text-canvas')
+
             let alt = id == "#blank" ? "#original" : "#blank";
             let element = document.querySelector(id)
             if(element.classList.contains("hidden")) {
@@ -621,12 +627,27 @@
             element = document.querySelector("canvas[class^=edit-canvas]")
             inputs.forEach(input=>input.style.visibility = element.classList.contains("hidden") ? "hidden" : "visible")
         }
+        
+        function updateData(id){
+            
+            let index = 0;
+            data.analyzeResult.readResults.forEach((page) => {
+                page.lines.forEach(line => {
+                    line.text = inputs[index++].value
+                })
+            })
+          
+            var canvas = document.querySelector(id);
+            var ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            addTextLayout(id, data);
+        }
     </script>
 </head>
 
 <body>
     <div id="container">
-        <img id="original" class="img" src="contoso-invoice.png" onload="Initialize(this)" />
+        <img id="original" class="img" src="contoso-invoice.png" onload="initialize(this)" />
         <img id="blank" class="img hidden" src="contoso-invoice-blank.png" />
         <canvas id="read-canvas" class="read-canvas"></canvas>
         <canvas id="page-canvas" class="page-canvas"></canvas>
@@ -646,11 +667,13 @@
 
     <div class="main-nav">
         <ul>
-            <li><a href="#" class="text" onclick="addContent('#original')">Original File</a></li>
-            <!--li><a href="#" class="text" onclick="addContent('#blank','text')">Text Results</a></li-->
-            <li><a href="#" class="text" onclick="addContent('#blank','edit')">Edit Results</a></li>
-            <li><a href="#" class="read" onclick="addLayout(this)">Read Results</a></li>
-            <li><a href="#" class="page" onclick="addLayout(this)">Page Results</a></li>
+            <li><a href="#" class="original" onclick="showContent('#original')">Original</a></li>
+            <li><a href="#" class="text" onclick="showContent('#blank','text')">Preview</a></li>
+            <li><a href="#" class="edit" onclick="showContent('#blank','edit')">Edit</a></li>
+            <li><a href="#" class="read" onclick="showLayout(this)">Read Results</a></li>
+            <li><a href="#" class="page" onclick="showLayout(this)">Page Results</a></li>
+            <li><a href="#" class="save" onclick="updateData('#text-canvas')">Save</a></li>
+            <li>&nbsp;</li>
         </ul>
     </div>
 
