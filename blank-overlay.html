@@ -224,8 +224,20 @@
             margin-top: 0;
             margin-bottom: 0;
         }
+
+        input[type="text"] {
+            font-weight: normal;
+            font-family: Tahoma, "Times New Roman", Times, serif;
+        }
+
+        input:focus {
+            outline-width: 0px;
+            outline-style: none;
+            outline-color: transparent;
+        }
     </style>
     <script>
+        var inputs = [];
         var rectangles = [];
         var readRectangles = [];
         var pageRectangles = [];
@@ -378,25 +390,25 @@
         function drawInput(id, top, left, width, height, line) {
             var canvas = document.querySelector(id);
             var text = line.words.map((item) => item.text).join(" ")
-            var size = (width / text.length) * dpi; //Math.pow(dpi, 2.125)
+            var size = (width / text.length) * dpi;
+           
             var input = document.createElement("input");
                         input.style.position = "absolute";
                         input.type = "text"
-                        input.enabled = true;
-                        input.style.top = `${top-dpi}px`;
-                        input.style.left = `${left}px`;
-                        input.style.width = `${width + dpi}px`;
-                        //input.style.height = `${height}px`;
-                        input.style.margin = '0px';
-                        input.style.border = '0px';
-                        input.style.fontSize = `${size-dpi}px`;
-                        input.style.zIndex = 500;
-                        input.style.background = "transparent"
                         input.value = text;
+                        input.enabled = true;
+                        input.style.zIndex = 500;
+                        input.style.margin = '0px';
+                        input.style.borderStyle  = "none";
+                        input.style.left = `${left}px`;
+                        input.style.top = `${top-(2*dpi)}px`;
+                        input.style.width = `${width * 1.333}px`;
+                        input.style.fontSize = `${size-dpi}px`;
+                        input.style.background = "transparent"
                         input = container.appendChild(input)
-                        input.style.display = "inherit"
+                        input.style.visibility = "hidden"
             input = container.appendChild(input)
-            input.style.display = "inherit"
+            inputs.push(input);
         }
 
         function addReadLayout(id, data) {
@@ -598,14 +610,16 @@
             element = document.querySelector("canvas[class^=edit-canvas]")
             if(!element.classList.contains("hidden")) {
                 element.classList.toggle("hidden")
+                inputs.forEach(input=>input.style.visibility="hidden")
             }
+
             element = document.querySelector(`canvas[class^=${canvas}-canvas]`)
-            console.log(element)
-            console.log(canvas)
             if(element && element.classList.contains("hidden")) {
                 element.classList.toggle("hidden")
             }
             
+            element = document.querySelector("canvas[class^=edit-canvas]")
+            inputs.forEach(input=>input.style.visibility = element.classList.contains("hidden") ? "hidden" : "visible")
         }
     </script>
 </head>
@@ -633,7 +647,7 @@
     <div class="main-nav">
         <ul>
             <li><a href="#" class="text" onclick="addContent('#original')">Original File</a></li>
-            <li><a href="#" class="text" onclick="addContent('#blank','text')">Text Results</a></li>
+            <!--li><a href="#" class="text" onclick="addContent('#blank','text')">Text Results</a></li-->
             <li><a href="#" class="text" onclick="addContent('#blank','edit')">Edit Results</a></li>
             <li><a href="#" class="read" onclick="addLayout(this)">Read Results</a></li>
             <li><a href="#" class="page" onclick="addLayout(this)">Page Results</a></li>
