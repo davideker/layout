@@ -158,46 +158,6 @@
             font-weight: 400;
         }
 
-        #tooltip {
-            background: #333;
-            color: white;
-            font-weight: bold;
-            padding: 4px 8px;
-            font-size: 13px;
-            border-radius: 4px;
-            visibility: hidden;
-        }
-
-        #arrow,
-        #arrow::before {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            z-index: -1;
-        }
-
-        #arrow::before {
-            content: '';
-            transform: rotate(45deg);
-            background: #333;
-        }
-
-        #tooltip[data-popper-placement^='top']>#arrow {
-            bottom: -4px;
-        }
-
-        #tooltip[data-popper-placement^='bottom']>#arrow {
-            top: -4px;
-        }
-
-        #tooltip[data-popper-placement^='left']>#arrow {
-            right: -4px;
-        }
-
-        #tooltip[data-popper-placement^='right']>#arrow {
-            left: -4px;
-        }
-
         .popper {
             background: rgba(255, 193, 7, 1);
             padding: 10px;
@@ -273,7 +233,7 @@
                 if (i < rectangles.length) {
                     var words = [];
                     rectangles[i][4].words.forEach(word => {
-                        words.push(`<span style="float:left">${word.text}</span><span style="float:right">&nbsp;(${word.confidence * 100 }%)</span>`)
+                        words.push(`<span style="float:left">${word.text}</span><span style="float:right">&nbsp;${word.confidence * 100 }%</span>`)
                     });
                     tooltip.innerHTML = words.join("<br/>");
                     virtualElement.getBoundingClientRect = generateGetBoundingClientRect(e.clientX - 4, e.clientY + 4);
@@ -313,12 +273,11 @@
 
         function drawText(id, top, left, width, height, line) {
             var canvas = document.querySelector(id);
-            var text = line.text; //line.words.map((item) => item.text).join(" ")
+            var text = line.text;
             var size = (width / line.words.map((item) => item.text).join(" ").length) * Math.pow(dpi, 2.125)
             var ctx = canvas.getContext("2d");
             ctx.font = `${size}px serif`
-            var adjustment = height //((size / 2) - 2 * dpi)
-            ctx.fillText(text, left * dpi, (top + adjustment) * dpi)
+            ctx.fillText(text, left * dpi, (top + height) * dpi)
         }
 
         function drawRect(id, top, left, width, height, color) {
@@ -417,11 +376,9 @@
 
                         }
                         drawRect(id, top, left, width, height, "red")
-                        //pageRectangles.push([left, top, right, bottom, cell.text]);
                     })
                 })
             });
-            //rectangles = pageRectangles;
         }
 
         function addTextLayout(id, data) {
@@ -496,6 +453,7 @@
             console.log(img.width)
             console.log(img.naturalHeight)
             console.log(img.naturalWidth)
+            overlayCanvas(img, "#read-canvas");
             overlayCanvas(img, "#read-canvas");
             overlayCanvas(img, "#page-canvas");
             overlayCanvas(img, "#text-canvas");
@@ -634,8 +592,8 @@
     </div>
 
     <!--//https://www.w3schools.com/css/css_tooltip.asp//-->
-    <span id="tooltip-1" class="popper" role="tooltip">
-        <!--span id="arrow-1" class="arrow" data-popper-arrow></span-->
+    <span id="tooltip" class="popper" role="tooltip">
+        <span id="arrow" class="arrow" data-popper-arrow></span>
     </span>
 
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
@@ -651,7 +609,7 @@
             getBoundingClientRect: generateGetBoundingClientRect(),
         };
 
-        const tooltip = document.querySelector('#tooltip-1');
+        const tooltip = document.querySelector('#tooltip');
         const instance = Popper.createPopper(virtualElement, tooltip, {
             modifiers: [
                 {
