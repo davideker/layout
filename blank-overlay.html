@@ -626,6 +626,7 @@
             
             element = document.querySelector("canvas[class^=edit-canvas]")
             inputs.forEach(input=>input.style.visibility = element.classList.contains("hidden") ? "hidden" : "visible")
+            inputs[0].focus()
         }
         
         function updateData(id){
@@ -641,6 +642,20 @@
             var ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             addTextLayout(id, data);
+        }
+        
+        function save() {
+            updateData('#text-canvas')
+            var a = document.createElement("a");
+            document.body.appendChild(a);
+            a.style = "display: none";
+            let text = JSON.stringify(data, null, "\t"),
+            blob = new Blob([text], {type: "octet/stream"}),
+            url = window.URL.createObjectURL(blob);
+            a.href = url;
+            a.download = json.split("/").slice(-1)[0]
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
     </script>
 </head>
@@ -661,7 +676,7 @@
                 <li class="line"></li>
                 <li class="line"></li>
             </ul>
-            <div class="menu-txt">menu</div>
+            <div class="menu-txt" style="width: 20px;"></div>
         </a>
     </div>
 
@@ -672,7 +687,7 @@
             <li><a href="#" class="edit" onclick="showContent('#blank','edit')">Edit</a></li>
             <li><a href="#" class="read" onclick="showLayout(this)">Read Results</a></li>
             <li><a href="#" class="page" onclick="showLayout(this)">Page Results</a></li>
-            <li><a href="#" class="save" onclick="updateData('#text-canvas')">Save</a></li>
+            <li><a href="#" class="save" onclick="save()">Save</a></li>
             <li>&nbsp;</li>
         </ul>
     </div>
