@@ -13,7 +13,7 @@ To format the results of an API call, manually or programatically, replace the o
 <img id="blank" class="img hidden" src="contoso-invoice-b
 ```
 
- ... and update the path to the **JSON** results returned by the API. 
+ Update the following path to the **JSON** results returned by the API. 
  ```javascript
  const json = "Invoice_1.pdf.ocr.json";
 ```
