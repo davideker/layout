@@ -18,11 +18,10 @@ To format the results of an API call, manually or programatically, replace the o
  const json = "Invoice_1.pdf.ocr.json";
 ```
 
-This utility supports and has been tested with **PNG** files. However, a list of file types supported by the &lt;img/&gt; element can be found [**here**](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types) and should work as well. The subset of document image formats supported by the **Azure Form Recognizer Layout API** can be found [**here**](https://docs.microsoft.com/en-us/azure/cognitive-services/form-recognizer/overview). 
----
-
+This utility supports and has been tested with **PNG** files. However, a list of file types supported by the &lt;img/&gt; element can be found [**here**](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types) and should work as well. The subset of document image formats supported by the **Azure Form Recognizer Layout API** can be found [**here**](https://docs.microsoft.com/en-us/azure/cognitive-services/form-recognizer/overview).
 
 You **MUST** use links to resources served from an **HTTP** compatible web server, local file system references <ins>**will not**</ins> work. To run a simple HTTP server locally use:
+
 ```javascript
 npx http-server
 ```
