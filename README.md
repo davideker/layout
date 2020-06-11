@@ -2,7 +2,7 @@
 
 View an interactive demo [here](https://davideker.github.io/layout/).
 
-![alt text](https://raw.githubusercontent.com/davideker/layout/d341b262ce50e0ba6a2955cc448c345908dd3f1f/example.png)
+![alt text](example.png)
 
 > **HTML5** utility that makes the **JSON** results of the [**Azure Form Recognizer Layout API**]("https://docs.microsoft.com/en-us/azure/cognitive-services/form-recognizer/quickstarts/python-layout") more comprehensible. Features include toggling read and page layout layers and tooltips that show the predictions and confidence level of each highlighted element. New features include inline editing documents, document preview and saving edits. 
 
