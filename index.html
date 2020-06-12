@@ -210,6 +210,67 @@
         //https://medium.com/wdstack/fixing-html5-2d-canvas-blur-8ebe27db07da
         const dpi = window.devicePixelRatio;
 
+        function test() {
+            //r1 = [0,15,12,20]
+            //r2 = [0,15,12,20]
+            //r2 = [5,19,18,27]
+
+            //var r = r1
+            //drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
+            //r = r2
+            //drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
+            //console.log(isContained(r1,r2,"x"))
+
+
+            /*
+            r1 = [0,15,12,20]
+            r2 = [12,13,15,21]
+ 
+            r = r1
+            drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
+            r = r2
+            drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
+            console.log(isContained(r1,r2,"x"))
+            */
+            
+            
+            
+            /*
+            r1 = [0,15,6,20]
+            r2 = [6,20,11,26]
+            
+            r = r1
+            drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
+            r = r2
+            drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
+            console.log(isContained(r1,r2,"x"))
+            */
+
+            /*
+            r1 = [6,15,11,20]
+            r2 = [0,20,6,26]
+            
+            r = r1
+            drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
+            r = r2
+            drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
+            console.log(isContained(r1,r2,"x")
+            */
+            
+            
+            /*r1 = [0,15,6,20]
+            r2 = [4,14,10,18]
+            
+            r = r1
+            drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
+            r = r2
+            drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
+            console.log(isContained(r1,r2,"x"))*/
+            
+
+
+        }
+
         function overlayCanvas(img, id) {
             var container = document.querySelector("#container");
             console.log(container);
@@ -227,7 +288,7 @@
                     y: e.offsetY
                 };
                 var i = 0;
-                while (i < rectangles.length && !isIntersect(pos, rectangles[i])) {
+                while (i < rectangles.length && !inBounds(pos, rectangles[i])) {
                     i++;
                 }
                 if (i < rectangles.length) {
@@ -248,12 +309,78 @@
 
         }
 
-        function isIntersect(pos, rect) {
+        function inBounds(pos, rect) {
             var result = pos.x - rect[0] >= 0 && pos.y - rect[1] >= 0 && pos.x - rect[2] <= 0 && pos.y - rect[3] <= 0;
             if (result) {
                 console.log(rect[4]);
             }
             return result;
+        }
+
+        function isContained(rect, _rect, axis) {
+           
+            let rect1 = [...rect]
+            let _rect1 = [..._rect]
+
+            let l1 = rect1[0]
+            let l2 = rect1[2]
+            let l = l2-l1;
+
+            let _l1 = _rect1[0]
+            let _l2 = _rect1[2]
+            let _l = _l2-_l1
+
+            
+            let z1 = null;
+            let z2 = null;
+            let result = false;
+            if(l > _l)
+            {
+              z1 = l2-_l1
+              z2 = l2-_l2
+              result = (z2 >= 0) && (z2 <= l)
+              if(z2 > 0 && z2 >= l){
+                  z1 = l - z1
+                  z2 = l - z2
+              }
+            }
+            else
+            {
+              z1 = _l2-l1
+              z2 = _l2-l2
+              result = (z2 >= 0) && (z2 <= _l)
+              if(z2 > 0 && z2 > _l){
+                  z1 = _l - z1
+                  z2 = _l - z2
+              }
+            }
+            
+            if(axis == "x")
+            {
+                rotate(rect1,-1)
+                rotate(_rect1,-1)
+                let result_y = isContained(rect1, _rect1, "y");
+                result = result && result_y
+            }
+            return result;
+        }
+
+        function rotate(rect, direction) {
+            if(direction >= 0)
+            {
+                var x = rect.reverse().shift()
+                rect.push(x)
+                rect.reverse()
+                return rect;
+            }
+            else
+            {
+                var x = rect.reverse().pop()
+                rect.reverse()
+                rect.push(x)
+            }
+            return rect;
+            
         }
 
         function fix_dpi(id) {
@@ -445,8 +572,9 @@
                 })
             })
         }
-
+       
         function initialize(img) {
+            
             console.log(dpi)
             console.log(img.offsetHeight)
             console.log(img.offsetWidth)
@@ -454,7 +582,7 @@
             console.log(img.width)
             console.log(img.naturalHeight)
             console.log(img.naturalWidth)
-            overlayCanvas(img, "#read-canvas");
+            //overlayCanvas(img, "#read-canvas");
             overlayCanvas(img, "#read-canvas");
             overlayCanvas(img, "#page-canvas");
             overlayCanvas(img, "#text-canvas");
@@ -500,6 +628,9 @@
                        **********************************************************/
                         return response.json();
                     }).then(function (json) {
+                        console.log("====")
+                        test()
+                        console.log("====")
                         intesect(json)
                         addPageLayout("#page-canvas", data);
                         addReadLayout("#read-canvas", data);
@@ -578,7 +709,7 @@
                     let top = line.boundingBox[1];
                     let right = line.boundingBox[2];
                     let bottom = line.boundingBox[5];
-                    let rect = [left, top, right, bottom, line]
+                    let rect = [left, top, right, bottom/*, line*/]
 
                     let lt = { x: left, y: top }
                     let lb = { x: left, y: bottom }
@@ -591,7 +722,7 @@
                         let _right = _line.boundingBox[2];
                         let _bottom = _line.boundingBox[5];
 
-                        let _rect = [_left, _top, _right, _bottom, _line]
+                        let _rect = [_left, _top, _right, _bottom/*, _line*/]
 
 
                         let _lt = { x: _left, y: _top }
@@ -600,9 +731,10 @@
                         let _rb = { x: _right, y: _bottom }
 
 
-                        let bool = isIntersect(lt, _rect) || isIntersect(lb, _rect) || isIntersect(rt, _rect) || isIntersect(rb, _rect)
-                        bool = bool || isIntersect(_lt, rect) || isIntersect(_lb, rect) || isIntersect(_rt, rect) || isIntersect(_rb, rect)
+                        //let bool = inBounds(lt, _rect) || inBounds(lb, _rect) || inBounds(rt, _rect) || inBounds(rb, _rect)
+                        //bool = bool || inBounds(_lt, rect) || inBounds(_lb, rect) || inBounds(_rt, rect) || inBounds(_rb, rect)
 
+                        let bool = isContained(rect,_rect,"x");
                         if (bool) {
                             //console.log(data.analyzeResult.readResults[pageIndex].lines[lineIndex])
                             delete data.analyzeResult.readResults[pageIndex].lines[lineIndex]
