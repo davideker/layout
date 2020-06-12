@@ -233,7 +233,7 @@
                 if (i < rectangles.length) {
                     var words = [];
                     rectangles[i][4].words.forEach(word => {
-                        words.push(`<span style="float:left">${word.text}</span><span style="float:right">&nbsp;${word.confidence * 100 }%</span>`)
+                        words.push(`<span style="float:left">${word.text}</span><span style="float:right">&nbsp;${word.confidence * 100}%</span>`)
                     });
                     tooltip.innerHTML = words.join("<br/>");
                     virtualElement.getBoundingClientRect = generateGetBoundingClientRect(e.clientX - 4, e.clientY + 4);
@@ -247,9 +247,9 @@
             });
 
         }
-        
+
         function isIntersect(pos, rect) {
-            var result = pos.x - rect[0] > 0 && pos.y - rect[1] > 0 && pos.x - rect[2] < 0 && pos.y - rect[3] < 0;
+            var result = pos.x - rect[0] >= 0 && pos.y - rect[1] >= 0 && pos.x - rect[2] <= 0 && pos.y - rect[3] <= 0;
             if (result) {
                 console.log(rect[4]);
             }
@@ -295,22 +295,22 @@
             var canvas = document.querySelector(id);
             var text = line.words.map((item) => item.text).join(" ")
             var size = (width / text.length) * dpi;
-           
+
             var input = document.createElement("input");
-                        input.style.position = "absolute";
-                        input.type = "text"
-                        input.value = text;
-                        input.enabled = true;
-                        input.style.zIndex = 500;
-                        input.style.margin = '0px';
-                        input.style.borderStyle  = "none";
-                        input.style.left = `${left}px`;
-                        input.style.top = `${top-(2*dpi)}px`;
-                        input.style.width = `${width * 1.333}px`;
-                        input.style.fontSize = `${size-dpi}px`;
-                        input.style.background = "transparent"
-                        input = container.appendChild(input)
-                        input.style.visibility = "hidden"
+            input.style.position = "absolute";
+            input.type = "text"
+            input.value = text;
+            input.enabled = true;
+            input.style.zIndex = 500;
+            input.style.margin = '0px';
+            input.style.borderStyle = "none";
+            input.style.left = `${left}px`;
+            input.style.top = `${top - (2 * dpi)}px`;
+            input.style.width = `${width * 1.333}px`;
+            input.style.fontSize = `${size - dpi}px`;
+            input.style.background = "transparent"
+            input = container.appendChild(input)
+            input.style.visibility = "hidden"
             input = container.appendChild(input)
             inputs.push(input);
         }
@@ -382,6 +382,7 @@
         }
 
         function addTextLayout(id, data) {
+            console.log(data)
             data.analyzeResult.readResults.forEach((page) => {
                 page.lines.forEach(line => {
 
@@ -478,12 +479,36 @@
                    7  1.3534 bottom
                **********************************************************/
                 return response.json();
-            }).then(function (text) {
+            }).then(async function (text) {
                 data = text
-                addPageLayout("#page-canvas", data);
-                addReadLayout("#read-canvas", data);
-                addTextLayout("#text-canvas", data);
-                addEditLayout("#edit-canvas", data);
+                fetch("invoice_blank.pdf.ocr.json")
+                    .then(function (response) {
+                        /*****************************************************
+                           The API call was successful!
+                           https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
+                           https://westus2.dev.cognitive.microsoft.com/docs/services/form-recognizer-api-v2-preview/operations/GetAnalyzeLayoutResult
+                           BoundingBox: [left,top,right,top,right,bottom,left,bottom]  
+                           EXAMPLE: 
+                           0  0.5384, left
+                           1  1.1583, top   
+                           2  1.4466, right
+                           3  1.1583, top
+                           4  1.4466, right
+                           5  1.3534, bottom
+                           6  0.5384, left
+                           7  1.3534 bottom
+                       **********************************************************/
+                        return response.json();
+                    }).then(function (json) {
+                        intesect(json)
+                        addPageLayout("#page-canvas", data);
+                        addReadLayout("#read-canvas", data);
+                        addTextLayout("#text-canvas", data);
+                        addEditLayout("#edit-canvas", data);
+                    }).catch(function (err) {
+                        console.warn(err);
+                    });
+
             }).catch(function (err) {
                 console.warn(err);
             });
@@ -495,62 +520,109 @@
                 canvas.classList.toggle("hidden");
             }
         }
-        
+
         function showContent(id, canvas) {
             updateData('#text-canvas')
 
             let alt = id == "#blank" ? "#original" : "#blank";
             let element = document.querySelector(id)
-            if(element.classList.contains("hidden")) {
+            if (element.classList.contains("hidden")) {
                 element.classList.toggle("hidden")
             }
             element = document.querySelector(alt)
-            if(!element.classList.contains("hidden")) {
+            if (!element.classList.contains("hidden")) {
                 element.classList.toggle("hidden")
             }
             element = document.querySelector("canvas[class^=text-canvas]")
-            if(!element.classList.contains("hidden")) {
+            if (!element.classList.contains("hidden")) {
                 element.classList.toggle("hidden")
             }
             element = document.querySelector("canvas[class^=edit-canvas]")
-            if(!element.classList.contains("hidden")) {
+            if (!element.classList.contains("hidden")) {
                 element.classList.toggle("hidden")
-                inputs.forEach(input=>input.style.visibility="hidden")
+                inputs.forEach(input => input.style.visibility = "hidden")
             }
 
             element = document.querySelector(`canvas[class^=${canvas}-canvas]`)
-            if(element && element.classList.contains("hidden")) {
+            if (element && element.classList.contains("hidden")) {
                 element.classList.toggle("hidden")
             }
-            
+
             element = document.querySelector("canvas[class^=edit-canvas]")
-            inputs.forEach(input=>input.style.visibility = element.classList.contains("hidden") ? "hidden" : "visible")
+            inputs.forEach(input => input.style.visibility = element.classList.contains("hidden") ? "hidden" : "visible")
             inputs[0].focus()
         }
-        
-        function updateData(id){
-            
+
+        function updateData(id) {
+
             let index = 0;
             data.analyzeResult.readResults.forEach((page) => {
                 page.lines.forEach(line => {
                     line.text = inputs[index++].value
                 })
             })
-          
+
             var canvas = document.querySelector(id);
             var ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             addTextLayout(id, data);
         }
-        
+
+        function intesect(json) {
+            let pageIndex = 0;
+            data.analyzeResult.readResults.forEach((page) => {
+                let lineIndex = 0;
+                page.lines.forEach(line => {
+
+                    let left = line.boundingBox[0];
+                    let top = line.boundingBox[1];
+                    let right = line.boundingBox[2];
+                    let bottom = line.boundingBox[5];
+                    let rect = [left, top, right, bottom, line]
+
+                    let lt = { x: left, y: top }
+                    let lb = { x: left, y: bottom }
+                    let rt = { x: right, y: top }
+                    let rb = { x: right, y: bottom }
+
+                    json.analyzeResult.readResults[pageIndex].lines.forEach(_line => {
+                        let _left = _line.boundingBox[0];
+                        let _top = _line.boundingBox[1];
+                        let _right = _line.boundingBox[2];
+                        let _bottom = _line.boundingBox[5];
+
+                        let _rect = [_left, _top, _right, _bottom, _line]
+
+
+                        let _lt = { x: _left, y: _top }
+                        let _lb = { x: _left, y: _bottom }
+                        let _rt = { x: _right, y: _top }
+                        let _rb = { x: _right, y: _bottom }
+
+
+                        let bool = isIntersect(lt, _rect) || isIntersect(lb, _rect) || isIntersect(rt, _rect) || isIntersect(rb, _rect)
+                        bool = bool || isIntersect(_lt, rect) || isIntersect(_lb, rect) || isIntersect(_rt, rect) || isIntersect(_rb, rect)
+
+                        if (bool) {
+                            //console.log(data.analyzeResult.readResults[pageIndex].lines[lineIndex])
+                            delete data.analyzeResult.readResults[pageIndex].lines[lineIndex]
+                        }
+
+                    });
+                    lineIndex++;
+                })
+                pageIndex++;
+            });
+        }
+
         function save() {
             updateData('#text-canvas')
             var a = document.createElement("a");
             document.body.appendChild(a);
             a.style = "display: none";
             let text = JSON.stringify(data, null, "\t"),
-            blob = new Blob([text], {type: "octet/stream"}),
-            url = window.URL.createObjectURL(blob);
+                blob = new Blob([text], { type: "octet/stream" }),
+                url = window.URL.createObjectURL(blob);
             a.href = url;
             a.download = json.split("/").slice(-1)[0]
             a.click();
