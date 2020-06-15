@@ -212,60 +212,62 @@
 
         function test() {
             //r1 = [0,15,12,20]
+            //r2 = [0,9,13,20]
             //r2 = [0,15,12,20]
-            //r2 = [5,19,18,27]
 
             //var r = r1
             //drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
             //r = r2
             //drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
-            //console.log(isContained(r1,r2,"x"))
+            //console.log(isContained2(r1,r2,"x"))
 
+            //r = r1
+            //rotate(r, -3)
+            //drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
+            //r = r2
+            //rotate(r, -3)
+            //drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
+            //console.log(isContained2(r1,r2,"x"))
 
-            /*
-            r1 = [0,15,12,20]
-            r2 = [12,13,15,21]
+            
+            /*var r1 = [0,15,12,20]
+            var r2 = [11,13,14,21]
  
             r = r1
             drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
             r = r2
             drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
-            console.log(isContained(r1,r2,"x"))
-            */
+            console.log(isContained2(r1,r2,"x"))*/
             
             
-            
-            /*
-            r1 = [0,15,6,20]
-            r2 = [6,20,11,26]
+            /*var r1 = [0,15,6,20]
+            var r2 = [5,19,10,25]
             
             r = r1
             drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
             r = r2
             drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
-            console.log(isContained(r1,r2,"x"))
-            */
-
-            /*
-            r1 = [6,15,11,20]
-            r2 = [0,20,6,26]
+            console.log(isContained2(r1,r2,"x"))*/
+            
+            
+            /*var r1 = [5,16,10,21]
+            var r2 = [0,20,6,26]
             
             r = r1
             drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
             r = r2
             drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
-            console.log(isContained(r1,r2,"x")
-            */
+            console.log(isContained2(r1,r2,"x"))*/
             
-            
-            /*r1 = [0,15,6,20]
-            r2 = [4,14,10,18]
+     
+            /*var r1 = [0,15,6,20]
+            var r2 = [4,14,10,18]
             
             r = r1
             drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "blue")
             r = r2
             drawRect("#read-canvas",r[1],r[0],r[2]-r[0],r[3]-r[1], "purple")
-            console.log(isContained(r1,r2,"x"))*/
+            console.log(isContained2(r1,r2,"x"))*/
             
 
 
@@ -316,6 +318,47 @@
             }
             return result;
         }
+
+        function isContained2(rect, _rect, axis) {
+           
+           let rect1 = [...rect]
+           let _rect1 = [..._rect]
+
+           let line_left  = rect1[0]
+           let line_right = rect1[2]
+           let line = line_right - line_left
+     
+           let _line_left  = _rect1[0]
+           let _line_right = _rect1[2]
+           let _line = _line_right - _line_left
+     
+           let delta = null;
+           let sum = (line + _line)
+           if(line_right >= _line_right)
+           {
+                delta = line_right - _line_left
+           }
+           else if(line_right < _line_right)
+           {
+                delta = _line_right - line_left
+           }
+
+           let result =  sum > delta 
+           
+           //console.log(rect1)
+           //console.log(_rect1)
+           //console.log("sum:" + sum)
+           //console.log("delta:" + delta)
+           
+           if(axis == "x")
+           {
+               rotate(rect1,-3)
+               rotate(_rect1,-3)
+               let result_y = isContained2(rect1, _rect1, "y");
+               result = result && result_y
+           }
+           return result;
+       }
 
         function isContained(rect, _rect, axis) {
            
@@ -733,8 +776,8 @@
 
                         //let bool = inBounds(lt, _rect) || inBounds(lb, _rect) || inBounds(rt, _rect) || inBounds(rb, _rect)
                         //bool = bool || inBounds(_lt, rect) || inBounds(_lb, rect) || inBounds(_rt, rect) || inBounds(_rb, rect)
-
-                        let bool = isContained(rect,_rect,"x");
+                        
+                        let bool = isContained2(rect,_rect,"x");
                         if (bool) {
                             //console.log(data.analyzeResult.readResults[pageIndex].lines[lineIndex])
                             delete data.analyzeResult.readResults[pageIndex].lines[lineIndex]
