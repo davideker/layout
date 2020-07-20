@@ -280,21 +280,21 @@
                 delta = _line_right - line_left
            }
 
-           let result =  sum > delta 
-           
-           //console.log(rect1)
-           //console.log(_rect1)
-           //console.log("sum:" + sum)
-           //console.log("delta:" + delta)
+           //let result =  sum > delta 
+           let area = 1-(delta/sum)
            
            if(axis == "x")
            {
                rotate(rect1,-3)
                rotate(_rect1,-3)
-               let result_y = isContained(rect1, _rect1, "y");
-               result = result && result_y
+               let y_axis = isContained(rect1, _rect1, "y");
+               return {x:area, y:y_axis["y"], result: area > 0 && y_axis["y"] > 0 }
            }
-           return result;
+           else
+           {
+               return  {y:area}
+           }
+        
        }
 
         function rotate(rect, direction) {
@@ -630,6 +630,7 @@
 
         function intesect(json) {
             let pageIndex = 0;
+            let copy = {...data}
             data.analyzeResult.readResults.forEach((page) => {
                 let lineIndex = 0;
                 page.lines.forEach(line => {
@@ -663,10 +664,11 @@
                         //let bool = inBounds(lt, _rect) || inBounds(lb, _rect) || inBounds(rt, _rect) || inBounds(rb, _rect)
                         //bool = bool || inBounds(_lt, rect) || inBounds(_lb, rect) || inBounds(_rt, rect) || inBounds(_rb, rect)
                         
-                        let bool = isContained(rect,_rect,"x");
-                        if (bool) {
+                        let area = isContained(rect,_rect,"x");
+                        if (!area["result"]) {
                             //console.log(data.analyzeResult.readResults[pageIndex].lines[lineIndex])
-                            delete data.analyzeResult.readResults[pageIndex].lines[lineIndex]
+                            //delete data.analyzeResult.readResults[pageIndex].lines[lineIndex]
+                            //delete copy.analyzeResult.readResults[pageIndex].lines[lineIndex]
                         }
 
                     });
@@ -674,6 +676,8 @@
                 })
                 pageIndex++;
             });
+            console.log(copy)
+            console.log(data)
         }
 
         function save() {
