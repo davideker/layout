@@ -351,6 +351,14 @@
         }
 
         function drawInput(id, top, left, width, height, line) {
+            let disabled = true;
+            if(line.result == undefined) {
+                disabled = false;
+            }
+            else {
+              disabled = (line.edit == "");
+            }
+            
             var canvas = document.querySelector(id);
             var text = line.edit??line.text;
             var size = (width / line.text.length) * dpi; 
@@ -358,7 +366,7 @@
             input.style.position = "absolute";
             input.type = "text"
             input.value = text;
-            input.enabled = true;
+            input.disabled = disabled;
             input.style.zIndex = 500;
             input.style.margin = '0px';
             input.style.borderStyle = "none";
