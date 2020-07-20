@@ -333,7 +333,8 @@
         function drawText(id, top, left, width, height, line) {
             var canvas = document.querySelector(id);
             var text = line.text;
-            var size = (width / line.words.map((item) => item.text).join(" ").length) * Math.pow(dpi, 2.125)
+            //var size = (width / line.words.map((item) => item.text).join(" ").length) * Math.pow(dpi, 2.125)
+            var size = (width / line.text.length) * Math.pow(dpi, 2.125)
             var ctx = canvas.getContext("2d");
             ctx.font = `${size}px serif`
             ctx.fillText(text, left * dpi, (top + height) * dpi)
@@ -352,9 +353,10 @@
 
         function drawInput(id, top, left, width, height, line) {
             var canvas = document.querySelector(id);
-            var text = line.words.map((item) => item.text).join(" ")
-            var size = (width / text.length) * dpi;
-
+            //var text = line.words.map((item) => item.text).join(" ")
+            //var size = (width / text.length) * dpi;
+            var text = line.edit??line.text;
+            var size = (width / line.text.length) * dpi; 
             var input = document.createElement("input");
             input.style.position = "absolute";
             input.type = "text"
@@ -364,10 +366,12 @@
             input.style.margin = '0px';
             input.style.borderStyle = "none";
             input.style.left = `${left}px`;
-            input.style.top = `${top - (2 * dpi)}px`;
+            input.style.top = `${top - dpi}px`;//`${top - (2 * dpi)}px`;
             input.style.width = `${width * 1.333}px`;
-            input.style.fontSize = `${size - dpi}px`;
+            input.style.fontSize = `${size}px`;
             input.style.background = "transparent"
+            input.style.fontFamily = "serif"
+            input.style.padding = "0px"
             input = container.appendChild(input)
             input.style.visibility = "hidden"
             input = container.appendChild(input)
@@ -514,14 +518,20 @@
             console.log(img.width)
             console.log(img.naturalHeight)
             console.log(img.naturalWidth)
+            
+            //Adds tooltip
             //overlayCanvas(img, "#read-canvas");
             overlayCanvas(img, "#read-canvas");
             overlayCanvas(img, "#page-canvas");
             overlayCanvas(img, "#text-canvas");
+
+            //Fix DPI for canvas
             fix_dpi("#read-canvas");
             fix_dpi("#page-canvas");
             fix_dpi("#text-canvas");
             fix_dpi("#edit-canvas");
+
+            //Get Azure Form Recognizer results
             fetch(json).then(function (response) {
                 /*****************************************************
                    The API call was successful!
@@ -541,6 +551,7 @@
                 return response.json();
             }).then(async function (text) {
                 data = text
+                //Get Azure Form Recognizer results for blank form
                 fetch("invoice_blank.pdf.ocr.json")
                     .then(function (response) {
                         /*****************************************************
@@ -560,7 +571,10 @@
                        **********************************************************/
                         return response.json();
                     }).then(function (json) {
+                        //Find intersection of blank form (control) and current form 
                         intesect(json)
+
+                        //Create the canvas
                         addPageLayout("#page-canvas", data);
                         addReadLayout("#read-canvas", data);
                         addTextLayout("#text-canvas", data);
@@ -630,7 +644,7 @@
 
         function intesect(json) {
             let pageIndex = 0;
-            let copy = {...data}
+            //let copy = {...data}
             data.analyzeResult.readResults.forEach((page) => {
                 let lineIndex = 0;
                 page.lines.forEach(line => {
@@ -660,23 +674,22 @@
                         let _rt = { x: _right, y: _top }
                         let _rb = { x: _right, y: _bottom }
 
-
-                        //let bool = inBounds(lt, _rect) || inBounds(lb, _rect) || inBounds(rt, _rect) || inBounds(rb, _rect)
-                        //bool = bool || inBounds(_lt, rect) || inBounds(_lb, rect) || inBounds(_rt, rect) || inBounds(_rb, rect)
                         
                         let area = isContained(rect,_rect,"x");
-                        if (!area["result"]) {
-                            //console.log(data.analyzeResult.readResults[pageIndex].lines[lineIndex])
+                        console.log(line)
+                        console.log(area)
+                        if (area["result"]) {
+                            line.result = true;
+                            line.edit = line.text.replace(_line.text, "");
                             //delete data.analyzeResult.readResults[pageIndex].lines[lineIndex]
                             //delete copy.analyzeResult.readResults[pageIndex].lines[lineIndex]
-                        }
-
+                        } 
                     });
                     lineIndex++;
                 })
                 pageIndex++;
             });
-            console.log(copy)
+            //console.log(copy)
             console.log(data)
         }
 
