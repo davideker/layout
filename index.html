@@ -212,12 +212,12 @@
 
         function overlayCanvas(img, id) {
             var container = document.querySelector("#container");
-            console.log(container);
+            //console.log(container);
             container.style.width = img.width;
             container.style.height = img.height;
-            console.log(id);
+            //console.log(id);
             var canvas = document.querySelector(id);
-            console.log(canvas);
+            //console.log(canvas);
             canvas.style.width = img.width;
             canvas.style.height = img.height;
             //https://lavrton.com/hit-region-detection-for-html5-canvas-and-how-to-listen-to-click-events-on-canvas-shapes-815034d7e9f8/
@@ -233,7 +233,7 @@
                 if (i < rectangles.length) {
                     var words = [];
                     rectangles[i][4].words.forEach(word => {
-                        words.push(`<span style="float:left">${word.text}</span><span style="float:right">&nbsp;${word.confidence * 100}%</span>`)
+                        words.push(`<span style="float:left">${rectangles[i][4].label?.text??""} ${word.text}</span><span style="float:right">&nbsp;${word.confidence * 100}%</span>`)
                     });
                     tooltip.innerHTML = words.join("<br/>");
                     virtualElement.getBoundingClientRect = generateGetBoundingClientRect(e.clientX - 4, e.clientY + 4);
@@ -427,7 +427,7 @@
                         var bottom = cell.boundingBox[5];
                         var height = bottom - top
                         var width = right - left
-                        console.log(page.page)
+                        //console.log(page.page)
                         if (data.analyzeResult.readResults[Number(page.page) - 1].unit == "inch") {
                             left *= 96;
                             left -= 94 * .3
@@ -450,7 +450,7 @@
         }
 
         function addTextLayout(id, data) {
-            console.log(data)
+            //console.log(data)
             data.analyzeResult.readResults.forEach((page) => {
                 page.lines.forEach(line => {
 
@@ -516,6 +516,7 @@
        
         function initialize(img) {
             
+            /*
             console.log(dpi)
             console.log(img.offsetHeight)
             console.log(img.offsetWidth)
@@ -523,6 +524,7 @@
             console.log(img.width)
             console.log(img.naturalHeight)
             console.log(img.naturalWidth)
+            */
             
             //Adds tooltip
             //overlayCanvas(img, "#read-canvas");
@@ -651,6 +653,7 @@
             let pageIndex = 0;
             //let copy = {...data}
             data.analyzeResult.readResults.forEach((page) => {
+                labels = [];
                 let lineIndex = 0;
                 page.lines.forEach(line => {
 
@@ -664,7 +667,7 @@
                     let lb = { x: left, y: bottom }
                     let rt = { x: right, y: top }
                     let rb = { x: right, y: bottom }
-
+                    
                     json.analyzeResult.readResults[pageIndex].lines.forEach(_line => {
                         let _left = _line.boundingBox[0];
                         let _top = _line.boundingBox[1];
@@ -681,21 +684,61 @@
 
                         
                         let area = isContained(rect,_rect,"x");
-                        console.log(line)
-                        console.log(area)
+                        console.log(_line.text);
+                        //console.log(line)
+                        //console.log(area)
                         if (area["result"]) {
+                            //console.log(line.text + '=' + _line.text);
                             line.result = true;
                             line.edit = line.text.replace(_line.text, "");
+                            labels.push([line.text, _rect, lineIndex]);
                             //delete data.analyzeResult.readResults[pageIndex].lines[lineIndex]
                             //delete copy.analyzeResult.readResults[pageIndex].lines[lineIndex]
                         } 
                     });
                     lineIndex++;
                 })
+                labels.forEach(lbl=>{
+                    label(lbl[0], page, lbl[1], lbl[2]);
+                });
                 pageIndex++;
             });
             //console.log(copy)
-            console.log(data)
+            //console.log(data)
+        }
+
+        function label(text, page, _rect, index) {
+            let scale = 1;
+            let results = []
+            while(scale < 100)
+            {
+                lblrect = [_rect[0], _rect[1], _rect[2] + (scale * .20), _rect[3] + (scale * .20)]
+                for(i = index+1;i < page.lines.length; i++)
+                {
+                    let line = page.lines[i];
+
+                    let left = line.boundingBox[0];
+                    let top = line.boundingBox[1];
+                    let right = line.boundingBox[2];
+                    let bottom = line.boundingBox[5];
+                    let rect = [left, top, right, bottom]
+
+                    let lt = { x: left, y: top }
+                    let lb = { x: left, y: bottom }
+                    let rt = { x: right, y: top }
+                    let rb = { x: right, y: bottom }
+
+                    let area = isContained(rect,lblrect,"x");
+                    if (area["result"] && !line.result) { 
+                        area.text = text;
+                        line.label = area;
+                        return area;
+
+                    }
+                }
+                scale++;
+            }
+            return null;
         }
 
         function save() {
