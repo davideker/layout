@@ -684,7 +684,7 @@
 
                         
                         let area = isContained(rect,_rect,"x");
-                        console.log(_line.text);
+                        //console.log(_line.text);
                         //console.log(line)
                         //console.log(area)
                         if (area["result"]) {
@@ -698,7 +698,8 @@
                     });
                     lineIndex++;
                 })
-                labels.forEach(lbl=>{
+                labels.reverse().forEach(lbl=>{
+                    console.log(lbl[0])
                     label(lbl[0], page, lbl[1], lbl[2]);
                 });
                 pageIndex++;
@@ -729,10 +730,13 @@
                     let rb = { x: right, y: bottom }
 
                     let area = isContained(rect,lblrect,"x");
-                    if (area["result"] && !line.result) { 
+                    if (area["result"] 
+                        && !line.result
+                        && line?.label == null) { 
                         area.text = text;
                         line.label = area;
-                        return area;
+                        if(i == page.lines.length)
+                            return area;
 
                     }
                 }
